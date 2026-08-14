@@ -5,6 +5,7 @@ require_once __DIR__ . '/auth.php';
 require_login();
 
 $current_page = basename($_SERVER['PHP_SELF']);
+$current_role = $_SESSION['role'];
 
 ?>
 
@@ -21,7 +22,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <h2>Bank Sampah</h2>
 
             <span>
-                <?= ucfirst(htmlspecialchars($_SESSION['role'])) ?>
+                <?= ucfirst(htmlspecialchars($current_role)) ?>
             </span>
         </div>
 
@@ -31,7 +32,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- MENU -->
     <nav class="sidebar-menu">
 
-        <?php if ($_SESSION['role'] === 'admin'): ?>
+        <?php if ($current_role === 'admin'): ?>
+
+            <!-- ========================= -->
+            <!-- MENU ADMIN -->
+            <!-- ========================= -->
 
             <div class="menu-title">
                 MENU UTAMA
@@ -40,7 +45,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
             <!-- DASHBOARD -->
             <a
-                href="../admin/dashboard.php"
+                href="/bank-sampah/admin/dashboard.php"
                 class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"
             >
                 <span class="menu-icon">▣</span>
@@ -50,55 +55,58 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
             <!-- NASABAH -->
             <a
-                href="../admin/nasabah/index.php"
-                class="<?= $current_page === 'index.php' && strpos($_SERVER['PHP_SELF'], '/nasabah/') !== false ? 'active' : '' ?>"
+                href="/bank-sampah/admin/nasabah/index.php"
             >
-               <span class="menu-icon">♙</span>
-               <span>Nasabah</span>
+                <span class="menu-icon">♙</span>
+                <span>Nasabah</span>
             </a>
 
 
             <!-- JENIS SAMPAH -->
             <a
-                href="../admin/sampah/index.php"
-                class="<?= $current_page === 'index.php' && strpos($_SERVER['PHP_SELF'], '/sampah/') !== false ? 'active' : '' ?>"
+                href="/bank-sampah/admin/sampah/index.php"
             >
                 <span class="menu-icon">♻</span>
                 <span>Jenis Sampah</span>
             </a>
 
 
-            <!-- TRANSAKSI -->
+            <!-- TRANSAKSI SETOR -->
             <a
-    href="../admin/transaksi/index.php"
-    class="<?= $current_page === 'index.php' && strpos($_SERVER['PHP_SELF'], '/transaksi/') !== false ? 'active' : '' ?>"
->
-    <span class="menu-icon">⇅</span>
-    <span>Transaksi Setor</span>
-</a>
+                href="/bank-sampah/admin/transaksi/index.php"
+            >
+                <span class="menu-icon">⇅</span>
+                <span>Transaksi Setor</span>
+            </a>
 
 
             <!-- PENARIKAN -->
             <a
-    href="../admin/penarikan/index.php"
-    class="<?= $current_page === 'index.php' && strpos($_SERVER['PHP_SELF'], '/penarikan/') !== false ? 'active' : '' ?>"
->
-    <span class="menu-icon">↓</span>
-    <span>Penarikan</span>
-</a>
+                href="/bank-sampah/admin/penarikan/index.php"
+            >
+                <span class="menu-icon">↓</span>
+                <span>Penarikan</span>
+            </a>
 
 
             <!-- LAPORAN -->
             <a
-    href="../admin/laporan/transaksi.php"
-    class="<?= $current_page === 'transaksi.php' && strpos($_SERVER['PHP_SELF'], '/laporan/') !== false ? 'active' : '' ?>"
->
-    <span class="menu-icon">▤</span>
-    <span>Laporan</span>
-</a>
+                href="/bank-sampah/admin/laporan/index.php"
+            >
+                <span class="menu-icon">▤</span>
+                <span>Laporan</span>
+            </a>
+
+
+            <div class="menu-title">
+                MANAJEMEN
+            </div>
+
 
             <!-- PENGATURAN -->
-            <a href="#">
+            <a
+                href="/bank-sampah/admin/pengaturan/index.php"
+            >
                 <span class="menu-icon">⚙</span>
                 <span>Pengaturan</span>
             </a>
@@ -106,75 +114,88 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
         <?php else: ?>
 
-    <div class="menu-title">
-        MENU UTAMA
-    </div>
+            <!-- ========================= -->
+            <!-- MENU NASABAH -->
+            <!-- ========================= -->
 
-    <!-- DASHBOARD -->
-    <a
-        href="../nasabah/dashboard.php"
-        class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"
-    >
-        <span class="menu-icon">▣</span>
-        <span>Dashboard</span>
-    </a>
-
-    <!-- SETOR SAMPAH -->
-    <a
-        href="../nasabah/setor.php"
-        class="<?= $current_page === 'setor.php' ? 'active' : '' ?>"
-    >
-        <span class="menu-icon">♻</span>
-        <span>Setor Sampah</span>
-    </a>
-
-    <!-- RIWAYAT -->
-    <a
-        href="../nasabah/riwayat.php"
-        class="<?= $current_page === 'riwayat.php' ? 'active' : '' ?>"
-    >
-        <span class="menu-icon">↕</span>
-        <span>Riwayat Setor</span>
-    </a>
-
-    <!-- SALDO -->
-    <a
-        href="../nasabah/saldo.php"
-        class="<?= $current_page === 'saldo.php' ? 'active' : '' ?>"
-    >
-        <span class="menu-icon">💰</span>
-        <span>Saldo</span>
-    </a>
-
-    <!-- PENARIKAN -->
-    <a
-        href="../nasabah/penarikan.php"
-        class="<?= $current_page === 'penarikan.php' ? 'active' : '' ?>"
-    >
-        <span class="menu-icon">↓</span>
-        <span>Penarikan</span>
-    </a>
+            <div class="menu-title">
+                MENU UTAMA
+            </div>
 
 
-    <div class="menu-title">
-        AKUN
-    </div>
+            <!-- DASHBOARD -->
+            <a
+                href="/bank-sampah/nasabah/dashboard.php"
+                class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"
+            >
+                <span class="menu-icon">▣</span>
+                <span>Dashboard</span>
+            </a>
 
-    <!-- PROFIL -->
-    <a
-        href="../nasabah/profil.php"
-        class="<?= $current_page === 'profil.php' ? 'active' : '' ?>"
-    >
-        <span class="menu-icon">⚙</span>
-        <span>Profil</span>
-    </a>
 
-<?php endif; ?>
+            <!-- SETOR SAMPAH -->
+            <a
+                href="/bank-sampah/nasabah/setor.php"
+                class="<?= $current_page === 'setor.php' ? 'active' : '' ?>"
+            >
+                <span class="menu-icon">♻</span>
+                <span>Setor Sampah</span>
+            </a>
+
+
+            <!-- RIWAYAT -->
+            <a
+                href="/bank-sampah/nasabah/riwayat.php"
+                class="<?= $current_page === 'riwayat.php' ? 'active' : '' ?>"
+            >
+                <span class="menu-icon">↕</span>
+                <span>Riwayat Setor</span>
+            </a>
+
+
+            <!-- SALDO -->
+            <a
+                href="/bank-sampah/nasabah/saldo.php"
+                class="<?= $current_page === 'saldo.php' ? 'active' : '' ?>"
+            >
+                <span class="menu-icon">💰</span>
+                <span>Saldo</span>
+            </a>
+
+
+            <!-- PENARIKAN -->
+            <a
+                href="/bank-sampah/nasabah/penarikan.php"
+                class="<?= $current_page === 'penarikan.php' ? 'active' : '' ?>"
+            >
+                <span class="menu-icon">↓</span>
+                <span>Penarikan</span>
+            </a>
+
+
+            <div class="menu-title">
+                AKUN
+            </div>
+
+
+            <!-- PROFIL -->
+            <a
+                href="/bank-sampah/nasabah/profil.php"
+                class="<?= $current_page === 'profil.php' ? 'active' : '' ?>"
+            >
+                <span class="menu-icon">⚙</span>
+                <span>Profil</span>
+            </a>
+
+        <?php endif; ?>
 
     </nav>
 
 
-    <!-- BOTTOM -->
+    <!-- ========================= -->
+    <!-- USER BOTTOM -->
+    <!-- ========================= -->
+
     <div class="sidebar-bottom">
 
         <div class="sidebar-user">
@@ -190,6 +211,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 ) ?>
 
             </div>
+
 
             <div class="sidebar-user-info">
 
@@ -208,8 +230,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
 
 
+        <!-- LOGOUT -->
         <a
-            href="../auth/logout.php"
+            href="/bank-sampah/auth/logout.php"
             class="logout-link"
         >
             <span class="menu-icon">↪</span>

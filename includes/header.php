@@ -31,10 +31,7 @@ $initial = strtoupper(
         <?= htmlspecialchars($page_title) ?> - Bank Sampah
     </title>
 
-    <link
-        rel="stylesheet"
-        href="../assets/css/style.css"
-    >
+    <link rel="stylesheet" href="/bank-sampah/assets/css/style.css">
 
 </head>
 
