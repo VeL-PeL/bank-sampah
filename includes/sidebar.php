@@ -64,7 +64,7 @@ $current_role = $_SESSION['role'];
 
             <!-- JENIS SAMPAH -->
             <a
-                href="/bank-sampah/admin/sampah/index.php"
+                href="/bank-sampah/admin/jenis_sampah/index.php"
             >
                 <span class="menu-icon">♻</span>
                 <span>Jenis Sampah</span>
@@ -73,7 +73,7 @@ $current_role = $_SESSION['role'];
 
             <!-- TRANSAKSI SETOR -->
             <a
-                href="/bank-sampah/admin/transaksi/index.php"
+                href="/bank-sampah/admin/transaksi-setor/index.php"
             >
                 <span class="menu-icon">⇅</span>
                 <span>Transaksi Setor</span>
