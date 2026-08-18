@@ -1,4 +1,4 @@
-```php
+
 <?php
 
 require_once __DIR__ . '/../../includes/auth.php';
@@ -11,16 +11,14 @@ $page_title = 'Detail Nasabah';
 
 
 // ========================================
-// AMBIL ID NASABAH
+// AMBIL ID USER
 // ========================================
 
 $id = (int) ($_GET['id'] ?? 0);
 
 if ($id <= 0) {
-
     header('Location: index.php');
     exit;
-
 }
 
 
@@ -32,23 +30,29 @@ try {
 
     $stmt = $pdo->prepare("
         SELECT
-            id,
-            nama,
-            email,
-            role,
-            status,
-            created_at,
-            updated_at
-        FROM users
-        WHERE id = ?
-          AND role = 'nasabah'
+            u.id AS user_id,
+            u.nama,
+            u.email,
+            u.role,
+            u.status,
+            u.created_at,
+            u.updated_at,
+            n.id AS nasabah_id,
+            n.nomor_nasabah,
+            n.nik,
+            n.alamat,
+            n.no_hp
+        FROM users u
+        LEFT JOIN nasabah n
+            ON n.user_id = u.id
+        WHERE u.id = ?
+          AND u.role = 'nasabah'
         LIMIT 1
     ");
 
     $stmt->execute([$id]);
 
-    $nasabah =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $nasabah = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
 
@@ -66,6 +70,13 @@ if (!$nasabah) {
 
 
 // ========================================
+// ID NASABAH
+// ========================================
+
+$nasabahId = (int) ($nasabah['nasabah_id'] ?? 0);
+
+
+// ========================================
 // STATISTIK SETORAN
 // ========================================
 
@@ -78,42 +89,30 @@ try {
     $stmt = $pdo->prepare("
         SELECT
             COUNT(*) AS jumlah,
-            COALESCE(
-                SUM(berat),
-                0
-            ) AS total_berat,
-            COALESCE(
-                SUM(total_harga),
-                0
-            ) AS total_nilai
+            COALESCE(SUM(berat), 0) AS total_berat,
+            COALESCE(SUM(total_harga), 0) AS total_nilai
         FROM setoran
         WHERE user_id = ?
     ");
 
     $stmt->execute([$id]);
 
-    $stat_setoran =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $stat_setoran = $stmt->fetch(PDO::FETCH_ASSOC);
 
     $total_setoran =
-        (int) (
-            $stat_setoran['jumlah'] ?? 0
-        );
+        (int) ($stat_setoran['jumlah'] ?? 0);
 
     $total_berat =
-        (float) (
-            $stat_setoran['total_berat'] ?? 0
-        );
+        (float) ($stat_setoran['total_berat'] ?? 0);
 
     $total_nilai_setoran =
-        (float) (
-            $stat_setoran['total_nilai'] ?? 0
-        );
+        (float) ($stat_setoran['total_nilai'] ?? 0);
 
 } catch (PDOException $e) {
 
-    // Jika query gagal,
-    // statistik tetap 0.
+    $total_setoran = 0;
+    $total_berat = 0;
+    $total_nilai_setoran = 0;
 
 }
 
@@ -127,36 +126,40 @@ $total_nilai_penarikan = 0;
 
 try {
 
+    /*
+     * PENTING:
+     * setoran menggunakan users.id
+     * penarikan menggunakan nasabah.id
+     *
+     * Karena halaman ini menggunakan users.id,
+     * kita hubungkan penarikan ke nasabah
+     * melalui n.user_id.
+     */
+
     $stmt = $pdo->prepare("
         SELECT
-            COUNT(*) AS jumlah,
-            COALESCE(
-                SUM(jumlah),
-                0
-            ) AS total_jumlah
-        FROM penarikan
-        WHERE nasabah_id = ?
+            COUNT(p.id) AS jumlah,
+            COALESCE(SUM(p.jumlah), 0) AS total_jumlah
+        FROM penarikan p
+        INNER JOIN nasabah n
+            ON p.nasabah_id = n.id
+        WHERE n.user_id = ?
     ");
 
     $stmt->execute([$id]);
 
-    $stat_penarikan =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $stat_penarikan = $stmt->fetch(PDO::FETCH_ASSOC);
 
     $total_penarikan =
-        (int) (
-            $stat_penarikan['jumlah'] ?? 0
-        );
+        (int) ($stat_penarikan['jumlah'] ?? 0);
 
     $total_nilai_penarikan =
-        (float) (
-            $stat_penarikan['total_jumlah'] ?? 0
-        );
+        (float) ($stat_penarikan['total_jumlah'] ?? 0);
 
 } catch (PDOException $e) {
 
-    // Jika tabel/query belum tersedia,
-    // statistik tetap 0.
+    $total_penarikan = 0;
+    $total_nilai_penarikan = 0;
 
 }
 
@@ -173,9 +176,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 <main class="main-content">
 
-    <!-- ========================================
-         TOPBAR
-    ======================================== -->
+    <!-- TOPBAR -->
 
     <div class="topbar">
 
@@ -249,9 +250,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
 
-    <!-- ========================================
-         KONTEN
-    ======================================== -->
+    <!-- KONTEN -->
 
     <div
         style="
@@ -261,17 +260,14 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     >
 
 
-        <!-- ========================================
-             PROFIL NASABAH
-        ======================================== -->
+        <!-- PROFIL NASABAH -->
 
         <div
             style="
                 background: white;
                 padding: 30px;
                 border-radius: 15px;
-                box-shadow:
-                    0 10px 30px rgba(0,0,0,.06);
+                box-shadow: 0 10px 30px rgba(0,0,0,.06);
                 margin-bottom: 25px;
             "
         >
@@ -338,10 +334,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                 <div>
 
-                    <?php if (
-                        $nasabah['status']
-                        === 'aktif'
-                    ): ?>
+                    <?php if ($nasabah['status'] === 'aktif'): ?>
 
                         <span
                             style="
@@ -384,10 +377,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 style="
                     display: grid;
                     grid-template-columns:
-                        repeat(
-                            auto-fit,
-                            minmax(200px, 1fr)
-                        );
+                        repeat(auto-fit, minmax(200px, 1fr));
                     gap: 15px;
                     margin-top: 30px;
                 "
@@ -471,7 +461,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </div>
 
                     <strong>
-                        #<?= (int) $nasabah['id'] ?>
+                        #<?= $nasabahId ?>
                     </strong>
 
                 </div>
@@ -481,18 +471,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
 
 
-        <!-- ========================================
-             STATISTIK
-        ======================================== -->
+        <!-- STATISTIK -->
 
         <div
             style="
                 display: grid;
                 grid-template-columns:
-                    repeat(
-                        auto-fit,
-                        minmax(200px, 1fr)
-                    );
+                    repeat(auto-fit, minmax(200px, 1fr));
                 gap: 20px;
                 margin-bottom: 25px;
             "
@@ -506,8 +491,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     background: white;
                     padding: 22px;
                     border-radius: 15px;
-                    box-shadow:
-                        0 10px 30px rgba(0,0,0,.06);
+                    box-shadow: 0 10px 30px rgba(0,0,0,.06);
                 "
             >
 
@@ -565,8 +549,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     background: white;
                     padding: 22px;
                     border-radius: 15px;
-                    box-shadow:
-                        0 10px 30px rgba(0,0,0,.06);
+                    box-shadow: 0 10px 30px rgba(0,0,0,.06);
                 "
             >
 
@@ -624,8 +607,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     background: white;
                     padding: 22px;
                     border-radius: 15px;
-                    box-shadow:
-                        0 10px 30px rgba(0,0,0,.06);
+                    box-shadow: 0 10px 30px rgba(0,0,0,.06);
                 "
             >
 
@@ -667,15 +649,14 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
 
 
-            <!-- PENARIKAN -->
+            <!-- TOTAL PENARIKAN -->
 
             <div
                 style="
                     background: white;
                     padding: 22px;
                     border-radius: 15px;
-                    box-shadow:
-                        0 10px 30px rgba(0,0,0,.06);
+                    box-shadow: 0 10px 30px rgba(0,0,0,.06);
                 "
             >
 
@@ -735,17 +716,14 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
 
 
-        <!-- ========================================
-             TOMBOL
-        ======================================== -->
+        <!-- TOMBOL -->
 
         <div
             style="
                 background: white;
                 padding: 20px;
                 border-radius: 15px;
-                box-shadow:
-                    0 10px 30px rgba(0,0,0,.06);
+                box-shadow: 0 10px 30px rgba(0,0,0,.06);
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
@@ -769,7 +747,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 
             <a
-                href="edit.php?id=<?= (int) $nasabah['id'] ?>"
+                href="edit.php?id=<?= (int) $nasabah['user_id'] ?>"
                 style="
                     display: inline-block;
                     padding: 12px 20px;
@@ -795,4 +773,3 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 require_once __DIR__ . '/../../includes/footer.php';
 
 ?>
-```

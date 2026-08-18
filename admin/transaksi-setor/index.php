@@ -157,6 +157,31 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 <main class="main-content">
 
+<!-- KEMBALI KE DASHBOARD -->
+
+<div style="margin-top: 25px; margin-bottom: 10px;">
+
+    <a
+        href="../dashboard.php"
+        style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: white;
+            color: #166534;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            border: 1px solid #e5e7eb;
+        "
+    >
+        ← Kembali ke Dashboard
+    </a>
+
+</div>
+
 
     <!-- ========================================
          TOPBAR

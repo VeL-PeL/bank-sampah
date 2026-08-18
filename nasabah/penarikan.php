@@ -1,4 +1,4 @@
-```php
+
 <?php
 
 require_once __DIR__ . '/../includes/auth.php';
@@ -58,6 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $metode = $_POST['metode'] ?? '';
     $nomorTujuan = trim($_POST['nomor_tujuan'] ?? '');
 
+    /*
+     * Metode harus sesuai dengan ENUM database:
+     * bank
+     * e_wallet
+     */
+
     if ($jumlah <= 0) {
 
         $error = 'Jumlah penarikan harus lebih dari Rp 0.';
@@ -66,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $error = 'Saldo kamu tidak mencukupi.';
 
-    } elseif (!in_array($metode, ['bank', 'ewallet'], true)) {
+    } elseif (!in_array($metode, ['bank', 'e_wallet'], true)) {
 
         $error = 'Metode penarikan tidak valid.';
 
@@ -78,9 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
 
-            /*
-             * Cari nasabah berdasarkan user yang sedang login.
-             */
+            // Cari nasabah berdasarkan user yang sedang login
 
             $stmt = $pdo->prepare("
                 SELECT id
@@ -105,9 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $nasabahId = (int) $nasabah['id'];
 
 
-                /*
-                 * Buat kode penarikan.
-                 */
+                // Buat kode penarikan
 
                 $kodePenarikan =
                     'WD-' .
@@ -122,9 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
 
 
-                /*
-                 * Simpan pengajuan penarikan.
-                 */
+                // Simpan pengajuan penarikan
 
                 $stmt = $pdo->prepare("
                     INSERT INTO penarikan (
@@ -163,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
 
             $error = 'Gagal menyimpan pengajuan penarikan.';
+
         }
 
     }
@@ -207,8 +208,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
         <div class="topbar-right">
 
-            <!-- NOTIFICATION -->
-
             <button
                 type="button"
                 class="notification-btn"
@@ -223,8 +222,6 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
             </button>
 
-
-            <!-- USER -->
 
             <div class="user-info">
 
@@ -243,9 +240,11 @@ require_once __DIR__ . '/../includes/sidebar.php';
                 <div class="user-details">
 
                     <div class="user-name">
+
                         <?= htmlspecialchars(
                             $_SESSION['nama']
                         ) ?>
+
                     </div>
 
                     <div class="user-role">
@@ -459,7 +458,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                             Bank
                         </option>
 
-                        <option value="ewallet">
+                        <option value="e_wallet">
                             E-Wallet
                         </option>
 
@@ -535,4 +534,3 @@ require_once __DIR__ . '/../includes/sidebar.php';
 require_once __DIR__ . '/../includes/footer.php';
 
 ?>
-```

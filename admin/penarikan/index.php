@@ -1,59 +1,112 @@
-```php
+
 <?php
 
-require_once __DIR__ . '/../../includes/auth.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
+require_once __DIR__ . '/../../includes/auth.php';
 require_role('admin');
 
 require_once __DIR__ . '/../../config/database.php';
 
-$page_title = 'Penarikan';
+
+// ========================================
+// FILTER
+// ========================================
+
+$status_filter = $_GET['status'] ?? '';
+
+$status_valid = [
+    '',
+    'pending',
+    'diterima',
+    'ditolak'
+];
+
+if (!in_array($status_filter, $status_valid, true)) {
+    $status_filter = '';
+}
+
+
+// ========================================
+// QUERY
+// ========================================
+
+$where = [];
+$params = [];
+
+if ($status_filter !== '') {
+
+    $where[] = 'p.status = ?';
+
+    $params[] = $status_filter;
+
+}
+
 
 $penarikan = [];
 $error = '';
 
-
-// ========================================
-// AMBIL DATA PENARIKAN
-// ========================================
-
 try {
 
-    $stmt = $pdo->query("
+    $sql = "
         SELECT
             p.id,
             p.kode_penarikan,
-            p.nasabah_id,
             p.jumlah,
             p.metode,
             p.nomor_tujuan,
             p.status,
-            p.created_at,
-            n.user_id,
-            u.nama
+            p.tanggal_pengajuan,
+            n.nama AS nama_nasabah
+
         FROM penarikan p
+
         INNER JOIN nasabah n
             ON p.nasabah_id = n.id
-        INNER JOIN users u
-            ON n.user_id = u.id
-        ORDER BY p.created_at DESC
-    ");
+    ";
 
-    $penarikan = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($where)) {
+
+        $sql .= ' WHERE '
+            . implode(' AND ', $where);
+
+    }
+
+
+    $sql .= "
+        ORDER BY p.tanggal_pengajuan DESC
+    ";
+
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute($params);
+
+    $penarikan =
+        $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 } catch (PDOException $e) {
 
-    $error = 'Gagal mengambil data penarikan.';
+    $error =
+        'Gagal mengambil data penarikan.';
 
 }
+
+
+$total_penarikan = count($penarikan);
 
 
 // ========================================
 // HEADER & SIDEBAR
 // ========================================
 
-require_once __DIR__ . '/../../includes/header.php';
+$page_title = 'Penarikan';
 
+require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 
 ?>
@@ -61,8 +114,36 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 <main class="main-content">
 
+<!-- KEMBALI KE DASHBOARD -->
 
-    <!-- TOPBAR -->
+<div style="margin-top: 25px; margin-bottom: 10px;">
+
+    <a
+        href="../dashboard.php"
+        style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: white;
+            color: #166534;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            border: 1px solid #e5e7eb;
+        "
+    >
+        ← Kembali ke Dashboard
+    </a>
+
+</div>
+
+
+
+    <!-- ========================================
+         TOPBAR
+    ======================================== -->
 
     <div class="topbar">
 
@@ -85,24 +166,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         <div class="topbar-right">
 
-            <!-- NOTIFICATION -->
-
             <button
                 type="button"
                 class="notification-btn"
-                title="Notifikasi"
             >
-
                 🔔
-
                 <span class="notification-badge">
                     0
                 </span>
-
             </button>
 
-
-            <!-- USER -->
 
             <div class="user-info">
 
@@ -110,7 +183,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                     <?= strtoupper(
                         substr(
-                            $_SESSION['nama'],
+                            $_SESSION['nama'] ?? 'A',
                             0,
                             1
                         )
@@ -125,10 +198,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                         <?= htmlspecialchars(
                             $_SESSION['nama']
+                            ?? 'Administrator'
                         ) ?>
 
                     </div>
-
 
                     <div class="user-role">
                         Administrator
@@ -143,60 +216,208 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
 
-    <!-- CONTENT -->
 
-    <div
-        style="
-            margin-top: 30px;
+    <!-- ========================================
+         CONTENT
+    ======================================== -->
+
+    <div style="
+        margin-top: 30px;
+    ">
+
+
+        <!-- ========================================
+             FILTER
+        ======================================== -->
+
+        <div style="
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.08);
-        "
-    >
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.06);
+            margin-bottom: 20px;
+        ">
 
-        <h2
-            style="
-                margin-top: 0;
-                color: #166534;
-            "
-        >
-            Pengajuan Penarikan
-        </h2>
+            <form
+                method="GET"
+                action=""
+            >
+
+                <div style="
+                    display: flex;
+                    gap: 12px;
+                    align-items: end;
+                    flex-wrap: wrap;
+                ">
+
+
+                    <div>
+
+                        <label
+                            for="status"
+                            style="
+                                display: block;
+                                margin-bottom: 7px;
+                                font-weight: 600;
+                                color: #374151;
+                            "
+                        >
+                            Status
+                        </label>
+
+
+                        <select
+                            name="status"
+                            id="status"
+                            style="
+                                min-width: 190px;
+                                padding: 11px 12px;
+                                border: 1px solid #d1d5db;
+                                border-radius: 8px;
+                                background: white;
+                            "
+                        >
+
+                            <option value="">
+                                Semua Status
+                            </option>
+
+                            <option
+                                value="pending"
+                                <?= $status_filter === 'pending'
+                                    ? 'selected'
+                                    : '' ?>
+                            >
+                                Pending
+                            </option>
+
+                            <option
+                                value="diterima"
+                                <?= $status_filter === 'diterima'
+                                    ? 'selected'
+                                    : '' ?>
+                            >
+                                Diterima
+                            </option>
+
+                            <option
+                                value="ditolak"
+                                <?= $status_filter === 'ditolak'
+                                    ? 'selected'
+                                    : '' ?>
+                            >
+                                Ditolak
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        style="
+                            padding: 11px 18px;
+                            border: none;
+                            border-radius: 8px;
+                            background: #166534;
+                            color: white;
+                            font-weight: 600;
+                            cursor: pointer;
+                        "
+                    >
+                        🔎 Filter
+                    </button>
+
+
+                    <a
+                        href="index.php"
+                        style="
+                            padding: 11px 18px;
+                            border-radius: 8px;
+                            background: #f3f4f6;
+                            color: #374151;
+                            text-decoration: none;
+                            font-weight: 600;
+                        "
+                    >
+                        ↻ Reset
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+
+        <!-- ========================================
+             JUMLAH DATA
+        ======================================== -->
+
+        <div style="
+            background: #f0fdf4;
+            color: #166534;
+            padding: 15px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        ">
+
+            💰
+            <?= $total_penarikan ?>
+            pengajuan penarikan ditemukan.
+
+        </div>
+
 
 
         <?php if ($error !== ''): ?>
 
-            <div
-                style="
-                    background: #fee2e2;
-                    color: #991b1b;
-                    padding: 15px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                "
-            >
+
+            <div style="
+                background: #fee2e2;
+                color: #b91c1c;
+                padding: 18px;
+                border-radius: 10px;
+            ">
 
                 <?= htmlspecialchars($error) ?>
 
             </div>
 
-        <?php endif; ?>
+
+        <?php elseif (empty($penarikan)): ?>
 
 
-        <?php if (empty($penarikan)): ?>
+            <div style="
+                background: white;
+                padding: 50px 20px;
+                border-radius: 16px;
+                text-align: center;
+                color: #6b7280;
+                box-shadow: 0 10px 30px rgba(0,0,0,.06);
+            ">
 
-            <div
-                style="
-                    padding: 30px;
-                    text-align: center;
-                    color: #6b7280;
-                    background: #f9fafb;
-                    border-radius: 10px;
-                "
-            >
+                <div style="
+                    font-size: 45px;
+                    margin-bottom: 15px;
+                ">
+                    💸
+                </div>
 
-                Belum ada pengajuan penarikan.
+                <h3 style="
+                    margin: 0 0 8px;
+                    color: #374151;
+                ">
+                    Belum ada penarikan
+                </h3>
+
+                <p style="margin: 0;">
+                    Belum ada pengajuan penarikan
+                    sesuai filter.
+                </p>
 
             </div>
 
@@ -204,109 +425,106 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         <?php else: ?>
 
 
-            <div
-                style="
-                    overflow-x: auto;
-                "
-            >
+            <!-- ========================================
+                 TABLE
+            ======================================== -->
 
-                <table
-                    style="
-                        width: 100%;
-                        border-collapse: collapse;
-                    "
-                >
+            <div style="
+                background: white;
+                padding: 24px;
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0,0,0,.06);
+                overflow-x: auto;
+            ">
+
+                <table style="
+                    width: 100%;
+                    border-collapse: collapse;
+                ">
 
                     <thead>
 
                         <tr>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 No
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Kode
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Nasabah
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Jumlah
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Metode
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Nomor Tujuan
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Status
                             </th>
 
-                            <th
-                                style="
-                                    padding: 12px;
-                                    text-align: left;
-                                    border-bottom: 1px solid #e5e7eb;
-                                    color: #166534;
-                                "
-                            >
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
                                 Tanggal
+                            </th>
+
+                            <th style="
+                                padding: 14px;
+                                text-align: left;
+                                background: #f0fdf4;
+                                color: #166534;
+                            ">
+                                Aksi
                             </th>
 
                         </tr>
@@ -316,53 +534,130 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                     <tbody>
 
-                        <?php foreach ($penarikan as $index => $item): ?>
 
-                            <tr>
-
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                    "
-                                >
-                                    <?= $index + 1 ?>
-                                </td>
+                    <?php foreach (
+                        $penarikan
+                        as $index => $item
+                    ): ?>
 
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                        font-weight: bold;
-                                    "
-                                >
+                        <?php
+
+                        $status =
+                            $item['status'];
+
+                        if (
+                            $status === 'pending'
+                        ) {
+
+                            $status_background =
+                                '#fef3c7';
+
+                            $status_color =
+                                '#92400e';
+
+                            $status_text =
+                                'Pending';
+
+                        } elseif (
+                            $status === 'diterima'
+                        ) {
+
+                            $status_background =
+                                '#dcfce7';
+
+                            $status_color =
+                                '#166534';
+
+                            $status_text =
+                                'Diterima';
+
+                        } elseif (
+                            $status === 'ditolak'
+                        ) {
+
+                            $status_background =
+                                '#fee2e2';
+
+                            $status_color =
+                                '#b91c1c';
+
+                            $status_text =
+                                'Ditolak';
+
+                        } else {
+
+                            $status_background =
+                                '#e5e7eb';
+
+                            $status_color =
+                                '#374151';
+
+                            $status_text =
+                                ucfirst($status);
+
+                        }
+
+                        ?>
+
+
+                        <tr>
+
+
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <?= $index + 1 ?>
+
+                            </td>
+
+
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                                white-space: nowrap;
+                            ">
+
+                                <strong>
+
                                     <?= htmlspecialchars(
-                                        $item['kode_penarikan']
+                                        $item[
+                                            'kode_penarikan'
+                                        ]
                                     ) ?>
-                                </td>
+
+                                </strong>
+
+                            </td>
 
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                    "
-                                >
-                                    <?= htmlspecialchars(
-                                        $item['nama']
-                                    ) ?>
-                                </td>
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <?= htmlspecialchars(
+                                    $item[
+                                        'nama_nasabah'
+                                    ]
+                                ) ?>
+
+                            </td>
 
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                        font-weight: bold;
-                                        color: #166534;
-                                    "
-                                >
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <strong>
+
                                     Rp
                                     <?= number_format(
                                         $item['jumlah'],
@@ -370,130 +665,116 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                         ',',
                                         '.'
                                     ) ?>
-                                </td>
+
+                                </strong>
+
+                            </td>
 
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                    "
-                                >
-                                    <?= ucfirst(
-                                        htmlspecialchars(
-                                            $item['metode']
-                                        )
-                                    ) ?>
-                                </td>
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <?= htmlspecialchars(
+                                    $item['metode']
+                                ) ?>
+
+                            </td>
 
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                    "
-                                >
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <?= htmlspecialchars(
+                                    $item[
+                                        'nomor_tujuan'
+                                    ]
+                                ) ?>
+
+                            </td>
+
+
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <span style="
+                                    display: inline-block;
+                                    padding: 6px 10px;
+                                    border-radius: 20px;
+                                    background:
+                                        <?= $status_background ?>;
+                                    color:
+                                        <?= $status_color ?>;
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                ">
+
                                     <?= htmlspecialchars(
-                                        $item['nomor_tujuan']
+                                        $status_text
                                     ) ?>
-                                </td>
+
+                                </span>
+
+                            </td>
 
 
-                                <td
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                                white-space: nowrap;
+                            ">
+
+                                <?= date(
+                                    'd-m-Y H:i',
+                                    strtotime(
+                                        $item[
+                                            'tanggal_pengajuan'
+                                        ]
+                                    )
+                                ) ?>
+
+                            </td>
+
+
+                            <td style="
+                                padding: 14px;
+                                border-bottom:
+                                    1px solid #e5e7eb;
+                            ">
+
+                                <a
+                                    href="detail.php?id=<?= (int) $item['id'] ?>"
                                     style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
+                                        display: inline-block;
+                                        padding: 8px 13px;
+                                        border-radius: 7px;
+                                        background: #166534;
+                                        color: white;
+                                        text-decoration: none;
+                                        font-size: 13px;
+                                        font-weight: 600;
                                     "
                                 >
+                                    Detail
+                                </a>
 
-                                    <?php if ($item['status'] === 'pending'): ?>
-
-                                        <span
-                                            style="
-                                                display: inline-block;
-                                                padding: 6px 10px;
-                                                border-radius: 20px;
-                                                background: #fef3c7;
-                                                color: #92400e;
-                                                font-size: 13px;
-                                                font-weight: bold;
-                                            "
-                                        >
-                                            Pending
-                                        </span>
-
-                                    <?php elseif ($item['status'] === 'diterima'): ?>
-
-                                        <span
-                                            style="
-                                                display: inline-block;
-                                                padding: 6px 10px;
-                                                border-radius: 20px;
-                                                background: #dcfce7;
-                                                color: #166534;
-                                                font-size: 13px;
-                                                font-weight: bold;
-                                            "
-                                        >
-                                            Diterima
-                                        </span>
-
-                                    <?php elseif ($item['status'] === 'ditolak'): ?>
-
-                                        <span
-                                            style="
-                                                display: inline-block;
-                                                padding: 6px 10px;
-                                                border-radius: 20px;
-                                                background: #fee2e2;
-                                                color: #b91c1c;
-                                                font-size: 13px;
-                                                font-weight: bold;
-                                            "
-                                        >
-                                            Ditolak
-                                        </span>
-
-                                    <?php else: ?>
-
-                                        <span
-                                            style="
-                                                display: inline-block;
-                                                padding: 6px 10px;
-                                                border-radius: 20px;
-                                                background: #e5e7eb;
-                                                color: #374151;
-                                                font-size: 13px;
-                                                font-weight: bold;
-                                            "
-                                        >
-                                            <?= htmlspecialchars(
-                                                $item['status']
-                                            ) ?>
-                                        </span>
-
-                                    <?php endif; ?>
-
-                                </td>
+                            </td>
 
 
-                                <td
-                                    style="
-                                        padding: 12px;
-                                        border-bottom: 1px solid #e5e7eb;
-                                    "
-                                >
-                                    <?= date(
-                                        'd-m-Y H:i',
-                                        strtotime(
-                                            $item['created_at']
-                                        )
-                                    ) ?>
-                                </td>
+                        </tr>
 
-                            </tr>
 
-                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+
 
                     </tbody>
 
@@ -501,9 +782,12 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
             </div>
 
+
         <?php endif; ?>
 
+
     </div>
+
 
 </main>
 
@@ -513,4 +797,3 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 require_once __DIR__ . '/../../includes/footer.php';
 
 ?>
-```

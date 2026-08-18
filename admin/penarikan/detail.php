@@ -10,8 +10,28 @@ $page_title = 'Detail Penarikan';
 
 $id = (int) ($_GET['id'] ?? 0);
 
+$successCode = $_GET['success'] ?? '';
+$errorCode = $_GET['error'] ?? '';
+
+if ($successCode === 'diterima') {
+    $success = 'Penarikan berhasil diterima. Saldo nasabah telah dikurangi.';
+} elseif ($successCode === 'ditolak') {
+    $success = 'Pengajuan penarikan berhasil ditolak.';
+}
+
+if ($errorCode === 'sudah_diproses') {
+    $error = 'Penarikan ini sudah diproses sebelumnya.';
+} elseif ($errorCode === 'saldo_tidak_ditemukan') {
+    $error = 'Saldo nasabah tidak ditemukan.';
+} elseif ($errorCode === 'saldo_tidak_cukup') {
+    $error = 'Saldo nasabah tidak mencukupi untuk penarikan ini.';
+} elseif ($errorCode === 'gagal_memproses') {
+    $error = 'Gagal memproses penarikan.';
+}
+
 $penarikan = null;
 $error = '';
+$success = '';
 
 
 // ========================================
@@ -30,32 +50,43 @@ if ($id <= 0) {
         // AMBIL DETAIL PENARIKAN
         // ========================================
 
-        $stmt = $pdo->prepare("
-            SELECT
-                p.id,
-                p.kode_penarikan,
-                p.nasabah_id,
-                p.jumlah,
-                p.metode,
-                p.nomor_tujuan,
-                p.status,
-                p.created_at,
-                n.user_id,
-                u.nama
-            FROM penarikan p
-            INNER JOIN nasabah n
-                ON p.nasabah_id = n.id
-            INNER JOIN users u
-                ON n.user_id = u.id
-            WHERE p.id = :id
-            LIMIT 1
-        ");
+$stmt = $pdo->prepare("
+    SELECT
+        p.id,
+        p.kode_penarikan,
+        p.nasabah_id,
+        p.jumlah,
+        p.metode,
+        p.nomor_tujuan,
+        p.catatan,
+        p.status,
+        p.tanggal_pengajuan,
+        p.tanggal_diproses,
+        p.created_at,
 
-        $stmt->execute([
-            'id' => $id
-        ]);
+        n.user_id,
+        n.nama AS nama_nasabah,
 
-        $penarikan = $stmt->fetch(PDO::FETCH_ASSOC);
+        COALESCE(s.saldo, 0) AS saldo_saat_ini
+
+    FROM penarikan p
+
+    INNER JOIN nasabah n
+        ON p.nasabah_id = n.id
+
+    LEFT JOIN saldo s
+        ON s.nasabah_id = n.id
+
+    WHERE p.id = :id
+
+    LIMIT 1
+");
+
+$stmt->execute([
+    'id' => $id
+]);
+
+$penarikan = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
         if (!$penarikan) {
@@ -85,6 +116,32 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 
 <main class="main-content">
+
+<!-- KEMBALI KE DASHBOARD -->
+
+<div style="margin-top: 25px; margin-bottom: 10px;">
+
+    <a
+        href="../dashboard.php"
+        style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: white;
+            color: #166534;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            border: 1px solid #e5e7eb;
+        "
+    >
+        ← Kembali ke Dashboard
+    </a>
+
+</div>
+
 
 
     <!-- TOPBAR -->
@@ -215,6 +272,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         <?php elseif ($penarikan): ?>
 
+            <?php if ($success !== ''): ?>
+
+    <div
+        style="
+            background: #dcfce7;
+            color: #166534;
+            padding: 15px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        "
+    >
+        ✓ <?= htmlspecialchars($success) ?>
+    </div>
+
+<?php endif; ?>
+
 
             <!-- DETAIL CARD -->
 
@@ -292,8 +366,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                     <strong>
                         <?= htmlspecialchars(
-                            $penarikan['nama']
-                        ) ?>
+    $penarikan['nama_nasabah']
+) ?>
                     </strong>
 
                 </div>
@@ -337,37 +411,89 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                 </div>
 
+                
+<!-- SALDO NASABAH -->
 
-                <!-- METODE -->
+<div
+    style="
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 15px 0;
+        border-bottom: 1px solid #e5e7eb;
+    "
+>
 
-                <div
-                    style="
-                        display: flex;
-                        justify-content: space-between;
-                        gap: 20px;
-                        padding: 15px 0;
-                        border-bottom: 1px solid #e5e7eb;
-                    "
-                >
+    <span
+        style="
+            color: #6b7280;
+        "
+    >
+        Saldo Saat Ini
+    </span>
 
-                    <span
-                        style="
-                            color: #6b7280;
-                        "
-                    >
-                        Metode
-                    </span>
+    <strong
+        style="
+            color: #166534;
+            font-size: 18px;
+        "
+    >
+        Rp
+        <?= number_format(
+            $penarikan['saldo_saat_ini'],
+            0,
+            ',',
+            '.'
+        ) ?>
+    </strong>
+
+</div>
 
 
-                    <strong>
-                        <?= ucfirst(
-                            htmlspecialchars(
-                                $penarikan['metode']
-                            )
-                        ) ?>
-                    </strong>
 
-                </div>
+               
+<!-- METODE -->
+
+<div
+    style="
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 15px 0;
+        border-bottom: 1px solid #e5e7eb;
+    "
+>
+
+    <span
+        style="
+            color: #6b7280;
+        "
+    >
+        Metode
+    </span>
+
+    <strong>
+
+        <?php if ($penarikan['metode'] === 'bank'): ?>
+
+            🏦 Bank
+
+        <?php elseif ($penarikan['metode'] === 'e_wallet'): ?>
+
+            📱 E-Wallet
+
+        <?php else: ?>
+
+            <?= htmlspecialchars(
+                $penarikan['metode'] ?? '-'
+            ) ?>
+
+        <?php endif; ?>
+
+    </strong>
+
+</div>
+
 
 
                 <!-- NOMOR TUJUAN -->
