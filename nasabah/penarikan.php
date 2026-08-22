@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../includes/auth.php';
@@ -58,12 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $metode = $_POST['metode'] ?? '';
     $nomorTujuan = trim($_POST['nomor_tujuan'] ?? '');
 
-    /*
-     * Metode harus sesuai dengan ENUM database:
-     * bank
-     * e_wallet
-     */
-
     if ($jumlah <= 0) {
 
         $error = 'Jumlah penarikan harus lebih dari Rp 0.';
@@ -83,8 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
 
         try {
-
-            // Cari nasabah berdasarkan user yang sedang login
 
             $stmt = $pdo->prepare("
                 SELECT id
@@ -108,9 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $nasabahId = (int) $nasabah['id'];
 
-
-                // Buat kode penarikan
-
                 $kodePenarikan =
                     'WD-' .
                     date('YmdHis') .
@@ -123,8 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         )
                     );
 
-
-                // Simpan pengajuan penarikan
 
                 $stmt = $pdo->prepare("
                     INSERT INTO penarikan (
@@ -185,7 +171,9 @@ require_once __DIR__ . '/../includes/sidebar.php';
 <main class="main-content">
 
 
-    <!-- TOPBAR -->
+    <!-- ==================================================
+         TOPBAR
+    ================================================== -->
 
     <div class="topbar">
 
@@ -194,11 +182,11 @@ require_once __DIR__ . '/../includes/sidebar.php';
             <div class="page-title">
 
                 <h1>
-                    Penarikan
+                    Penarikan Saldo
                 </h1>
 
                 <p>
-                    Ajukan penarikan saldo Bank Sampah.
+                    Ajukan penarikan saldo Bank Sampah kamu.
                 </p>
 
             </div>
@@ -237,6 +225,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
                 </div>
 
+
                 <div class="user-details">
 
                     <div class="user-name">
@@ -260,43 +249,43 @@ require_once __DIR__ . '/../includes/sidebar.php';
     </div>
 
 
-    <!-- CONTENT -->
 
-    <div
-        style="
-            max-width: 700px;
-            margin-top: 30px;
-        "
-    >
+    <!-- ==================================================
+         CONTENT
+    ================================================== -->
+
+    <div class="penarikan-container">
 
 
-        <!-- SALDO -->
+        <!-- ==================================================
+             SALDO CARD
+        ================================================== -->
 
-        <div
-            style="
-                background: #166534;
-                color: white;
-                padding: 25px;
-                border-radius: 15px;
-                margin-bottom: 25px;
-            "
-        >
+        <div class="saldo-card">
 
-            <div
-                style="
-                    opacity: .85;
-                    margin-bottom: 8px;
-                "
-            >
-                Saldo Tersedia
+            <div class="saldo-top">
+
+                <div>
+
+                    <span class="saldo-label">
+                        SALDO TERSEDIA
+                    </span>
+
+                    <p class="saldo-title">
+                        Saldo yang dapat ditarik
+                    </p>
+
+                </div>
+
+
+                <div class="saldo-icon">
+                    💰
+                </div>
+
             </div>
 
-            <div
-                style="
-                    font-size: 32px;
-                    font-weight: bold;
-                "
-            >
+
+            <div class="saldo-value">
 
                 Rp <?= number_format(
                     $saldo,
@@ -307,216 +296,294 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
             </div>
 
+
+            <div class="saldo-footer">
+
+                <span>
+                    ♻ Bank Sampah
+                </span>
+
+                <span>
+                    Saldo aktif
+                </span>
+
+            </div>
+
         </div>
 
 
-        <!-- ERROR -->
+
+        <!-- ==================================================
+             ALERT ERROR
+        ================================================== -->
 
         <?php if ($error !== ''): ?>
 
-            <div
-                style="
-                    background: #fee2e2;
-                    color: #991b1b;
-                    padding: 15px;
-                    border-radius: 10px;
-                    margin-bottom: 20px;
-                "
-            >
+            <div class="alert alert-error">
 
-                <?= htmlspecialchars($error) ?>
+                <div class="alert-icon">
+                    !
+                </div>
+
+                <div>
+
+                    <strong>
+                        Pengajuan gagal
+                    </strong>
+
+                    <p>
+                        <?= htmlspecialchars($error) ?>
+                    </p>
+
+                </div>
 
             </div>
 
         <?php endif; ?>
 
 
-        <!-- SUCCESS -->
+
+        <!-- ==================================================
+             ALERT SUCCESS
+        ================================================== -->
 
         <?php if ($success !== ''): ?>
 
-            <div
-                style="
-                    background: #dcfce7;
-                    color: #166534;
-                    padding: 15px;
-                    border-radius: 10px;
-                    margin-bottom: 20px;
-                "
-            >
+            <div class="alert alert-success">
 
-                <?= htmlspecialchars($success) ?>
+                <div class="alert-icon">
+                    ✓
+                </div>
+
+                <div>
+
+                    <strong>
+                        Pengajuan berhasil
+                    </strong>
+
+                    <p>
+                        <?= htmlspecialchars($success) ?>
+                    </p>
+
+                </div>
 
             </div>
 
         <?php endif; ?>
 
 
-        <!-- FORM -->
 
-        <div
-            style="
-                background: white;
-                padding: 30px;
-                border-radius: 15px;
-                box-shadow: 0 10px 30px rgba(0,0,0,.08);
-            "
-        >
+        <!-- ==================================================
+             FORM CARD
+        ================================================== -->
 
-            <h2
-                style="
-                    margin-top: 0;
-                    color: #166534;
-                "
+        <div class="form-card">
+
+
+            <div class="form-header">
+
+                <div class="form-icon">
+                    ↓
+                </div>
+
+                <div>
+
+                    <h2>
+                        Ajukan Penarikan
+                    </h2>
+
+                    <p>
+                        Isi data berikut untuk mengajukan
+                        penarikan saldo.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <form
+                method="POST"
+                class="penarikan-form"
             >
-                Ajukan Penarikan
-            </h2>
-
-
-            <p
-                style="
-                    color: #6b7280;
-                    margin-bottom: 25px;
-                "
-            >
-                Isi data berikut untuk mengajukan penarikan saldo.
-            </p>
-
-
-            <form method="POST">
 
 
                 <!-- JUMLAH -->
 
-                <div style="margin-bottom: 20px;">
+                <div class="form-group">
 
-                    <label
-                        for="jumlah"
-                        style="
-                            display: block;
-                            margin-bottom: 8px;
-                            font-weight: bold;
-                        "
-                    >
+                    <label for="jumlah">
+
                         Jumlah Penarikan
+
+                        <span>
+                            *
+                        </span>
+
                     </label>
 
-                    <input
-                        type="number"
-                        name="jumlah"
-                        id="jumlah"
-                        min="1"
-                        max="<?= htmlspecialchars($saldo) ?>"
-                        step="1"
-                        placeholder="Contoh: 10000"
-                        required
-                        style="
-                            width: 100%;
-                            padding: 12px;
-                            border: 1px solid #d1d5db;
-                            border-radius: 8px;
-                            font-size: 15px;
-                        "
-                    >
+
+                    <div class="input-wrapper">
+
+                        <span class="input-icon">
+                            Rp
+                        </span>
+
+                        <input
+                            type="number"
+                            name="jumlah"
+                            id="jumlah"
+                            min="1"
+                            max="<?= htmlspecialchars($saldo) ?>"
+                            step="1"
+                            placeholder="Contoh: 10000"
+                            required
+                        >
+
+                    </div>
+
+
+                    <small>
+                        Maksimal penarikan:
+                        Rp <?= number_format(
+                            $saldo,
+                            0,
+                            ',',
+                            '.'
+                        ) ?>
+                    </small>
 
                 </div>
+
 
 
                 <!-- METODE -->
 
-                <div style="margin-bottom: 20px;">
+                <div class="form-group">
 
-                    <label
-                        for="metode"
-                        style="
-                            display: block;
-                            margin-bottom: 8px;
-                            font-weight: bold;
-                        "
-                    >
+                    <label for="metode">
+
                         Metode Penarikan
+
+                        <span>
+                            *
+                        </span>
+
                     </label>
 
-                    <select
-                        name="metode"
-                        id="metode"
-                        required
-                        style="
-                            width: 100%;
-                            padding: 12px;
-                            border: 1px solid #d1d5db;
-                            border-radius: 8px;
-                            font-size: 15px;
-                        "
-                    >
 
-                        <option value="">
-                            -- Pilih Metode --
-                        </option>
+                    <div class="input-wrapper">
 
-                        <option value="bank">
-                            Bank
-                        </option>
+                        <span class="input-icon">
+                            ▣
+                        </span>
 
-                        <option value="e_wallet">
-                            E-Wallet
-                        </option>
+                        <select
+                            name="metode"
+                            id="metode"
+                            required
+                        >
 
-                    </select>
+                            <option value="">
+                                -- Pilih Metode --
+                            </option>
+
+                            <option value="bank">
+                                Bank
+                            </option>
+
+                            <option value="e_wallet">
+                                E-Wallet
+                            </option>
+
+                        </select>
+
+                    </div>
 
                 </div>
+
 
 
                 <!-- NOMOR TUJUAN -->
 
-                <div style="margin-bottom: 25px;">
+                <div class="form-group">
 
-                    <label
-                        for="nomor_tujuan"
-                        style="
-                            display: block;
-                            margin-bottom: 8px;
-                            font-weight: bold;
-                        "
-                    >
+                    <label for="nomor_tujuan">
+
                         Nomor Rekening / E-Wallet
+
+                        <span>
+                            *
+                        </span>
+
                     </label>
 
-                    <input
-                        type="text"
-                        name="nomor_tujuan"
-                        id="nomor_tujuan"
-                        placeholder="Contoh: 081234567890"
-                        required
-                        style="
-                            width: 100%;
-                            padding: 12px;
-                            border: 1px solid #d1d5db;
-                            border-radius: 8px;
-                            font-size: 15px;
-                        "
-                    >
+
+                    <div class="input-wrapper">
+
+                        <span class="input-icon">
+                            #
+                        </span>
+
+                        <input
+                            type="text"
+                            name="nomor_tujuan"
+                            id="nomor_tujuan"
+                            placeholder="Contoh: 081234567890"
+                            required
+                        >
+
+                    </div>
+
+
+                    <small>
+                        Pastikan nomor tujuan sudah benar.
+                    </small>
 
                 </div>
 
 
-                <!-- SUBMIT -->
+
+                <!-- INFO -->
+
+                <div class="info-box">
+
+                    <div class="info-icon">
+                        💡
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Informasi Penarikan
+                        </strong>
+
+                        <p>
+                            Pengajuan akan diperiksa oleh admin.
+                            Saldo akan diproses sesuai status
+                            pengajuan penarikan.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- BUTTON -->
 
                 <button
                     type="submit"
-                    style="
-                        width: 100%;
-                        padding: 13px;
-                        border: none;
-                        border-radius: 8px;
-                        background: #16a34a;
-                        color: white;
-                        font-size: 16px;
-                        font-weight: bold;
-                        cursor: pointer;
-                    "
+                    class="btn-submit"
                 >
+
+                    <span>
+                        ↓
+                    </span>
+
                     Ajukan Penarikan
+
                 </button>
 
 
@@ -524,9 +591,725 @@ require_once __DIR__ . '/../includes/sidebar.php';
 
         </div>
 
+
+
+        <!-- ==================================================
+             BACK BUTTON
+        ================================================== -->
+
+        <a
+            href="saldo.php"
+            class="back-link"
+        >
+
+            ← Kembali ke Saldo
+
+        </a>
+
+
     </div>
 
 </main>
+
+
+
+<style>
+
+/* ======================================================
+   CONTAINER
+====================================================== */
+
+.penarikan-container {
+
+    max-width: 850px;
+
+    margin-top: 25px;
+
+}
+
+
+
+/* ======================================================
+   SALDO CARD
+====================================================== */
+
+.saldo-card {
+
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 30px;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #166534,
+            #16a34a
+        );
+
+    color: white;
+
+    box-shadow:
+        0 12px 30px rgba(22,101,52,.18);
+
+}
+
+
+.saldo-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 180px;
+
+    height: 180px;
+
+    right: -60px;
+
+    top: -70px;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.08);
+
+}
+
+
+.saldo-top {
+
+    position: relative;
+
+    z-index: 1;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+}
+
+
+.saldo-label {
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+
+    opacity: .8;
+
+}
+
+
+.saldo-title {
+
+    margin: 6px 0 0;
+
+    font-size: 14px;
+
+    opacity: .9;
+
+}
+
+
+.saldo-icon {
+
+    position: relative;
+
+    z-index: 2;
+
+    width: 50px;
+
+    height: 50px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: rgba(255,255,255,.15);
+
+    font-size: 23px;
+
+}
+
+
+.saldo-value {
+
+    position: relative;
+
+    z-index: 1;
+
+    margin-top: 28px;
+
+    font-size: 35px;
+
+    font-weight: 800;
+
+}
+
+
+.saldo-footer {
+
+    position: relative;
+
+    z-index: 1;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-top: 24px;
+
+    padding-top: 14px;
+
+    border-top: 1px solid rgba(255,255,255,.18);
+
+    font-size: 12px;
+
+    opacity: .85;
+
+}
+
+
+
+/* ======================================================
+   ALERT
+====================================================== */
+
+.alert {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 20px;
+
+    padding: 15px;
+
+    border-radius: 11px;
+
+}
+
+
+.alert-icon {
+
+    width: 34px;
+
+    height: 34px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 9px;
+
+    font-weight: 800;
+
+}
+
+
+.alert strong {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 13px;
+
+}
+
+
+.alert p {
+
+    margin: 0;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+}
+
+
+.alert-error {
+
+    background: #fee2e2;
+
+    color: #991b1b;
+
+}
+
+
+.alert-error .alert-icon {
+
+    background: #fecaca;
+
+}
+
+
+.alert-success {
+
+    background: #dcfce7;
+
+    color: #166534;
+
+}
+
+
+.alert-success .alert-icon {
+
+    background: #bbf7d0;
+
+}
+
+
+
+/* ======================================================
+   FORM CARD
+====================================================== */
+
+.form-card {
+
+    margin-top: 20px;
+
+    padding: 30px;
+
+    border-radius: 16px;
+
+    background: white;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.05);
+
+}
+
+
+.form-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    padding-bottom: 22px;
+
+    border-bottom: 1px solid #f0f0f0;
+
+}
+
+
+.form-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #dcfce7;
+
+    color: #166534;
+
+    font-size: 23px;
+
+    font-weight: 800;
+
+}
+
+
+.form-header h2 {
+
+    margin: 0 0 5px;
+
+    color: #166534;
+
+    font-size: 20px;
+
+}
+
+
+.form-header p {
+
+    margin: 0;
+
+    color: #9ca3af;
+
+    font-size: 12px;
+
+}
+
+
+
+/* ======================================================
+   FORM
+====================================================== */
+
+.penarikan-form {
+
+    margin-top: 25px;
+
+}
+
+
+.form-group {
+
+    margin-bottom: 22px;
+
+}
+
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+}
+
+
+.form-group label span {
+
+    color: #dc2626;
+
+}
+
+
+.input-wrapper {
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+}
+
+
+.input-icon {
+
+    position: absolute;
+
+    left: 14px;
+
+    z-index: 2;
+
+    color: #166534;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+}
+
+
+.input-wrapper input,
+.input-wrapper select {
+
+    width: 100%;
+
+    height: 48px;
+
+    padding: 0 15px 0 45px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    background: white;
+
+    color: #1f2937;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    transition: .2s;
+
+}
+
+
+.input-wrapper input:focus,
+.input-wrapper select:focus {
+
+    outline: none;
+
+    border-color: #16a34a;
+
+    box-shadow:
+        0 0 0 3px rgba(22,163,74,.10);
+
+}
+
+
+.form-group small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #9ca3af;
+
+    font-size: 11px;
+
+}
+
+
+
+/* ======================================================
+   INFO BOX
+====================================================== */
+
+.info-box {
+
+    display: flex;
+
+    gap: 12px;
+
+    margin: 5px 0 24px;
+
+    padding: 14px;
+
+    border-radius: 10px;
+
+    background: #f0fdf4;
+
+    border: 1px solid #dcfce7;
+
+}
+
+
+.info-icon {
+
+    width: 32px;
+
+    height: 32px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: #dcfce7;
+
+}
+
+
+.info-box strong {
+
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #166534;
+
+    font-size: 12px;
+
+}
+
+
+.info-box p {
+
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+}
+
+
+
+/* ======================================================
+   BUTTON
+====================================================== */
+
+.btn-submit {
+
+    width: 100%;
+
+    height: 50px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: #16a34a;
+
+    color: white;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    transition: .2s;
+
+}
+
+
+.btn-submit:hover {
+
+    background: #15803d;
+
+    transform: translateY(-1px);
+
+}
+
+
+.btn-submit:active {
+
+    transform: translateY(0);
+
+}
+
+
+
+/* ======================================================
+   BACK
+====================================================== */
+
+.back-link {
+
+    display: inline-block;
+
+    margin-top: 18px;
+
+    color: #166534;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+.back-link:hover {
+
+    text-decoration: underline;
+
+}
+
+
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+
+@media (max-width: 650px) {
+
+    .penarikan-container {
+
+        margin-top: 20px;
+
+    }
+
+
+    .saldo-card {
+
+        padding: 23px;
+
+    }
+
+
+    .saldo-value {
+
+        font-size: 29px;
+
+    }
+
+
+    .form-card {
+
+        padding: 22px;
+
+    }
+
+}
+
+
+@media (max-width: 400px) {
+
+    .saldo-card {
+
+        padding: 20px;
+
+    }
+
+
+    .saldo-value {
+
+        font-size: 25px;
+
+    }
+
+
+    .saldo-footer {
+
+        flex-direction: column;
+
+        gap: 5px;
+
+    }
+
+
+    .form-card {
+
+        padding: 18px;
+
+    }
+
+}
+
+</style>
+
 
 
 <?php

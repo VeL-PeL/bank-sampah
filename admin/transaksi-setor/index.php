@@ -1,4 +1,3 @@
-
 <?php
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -10,19 +9,21 @@ require_role('admin');
 
 require_once __DIR__ . '/../../config/database.php';
 
+$page_title = 'Transaksi Setor';
 
-// ========================================
+
+// ======================================================
 // FILTER
-// ========================================
+// ======================================================
 
 $status_filter = $_GET['status'] ?? '';
 $tanggal_dari = $_GET['tanggal_dari'] ?? '';
 $tanggal_sampai = $_GET['tanggal_sampai'] ?? '';
 
 
-// ========================================
+// ======================================================
 // VALIDASI STATUS
-// ========================================
+// ======================================================
 
 $status_valid = [
     '',
@@ -36,44 +37,26 @@ if (!in_array($status_filter, $status_valid, true)) {
 }
 
 
-// ========================================
+// ======================================================
 // QUERY
-// ========================================
+// ======================================================
 
 $where = [];
 $params = [];
 
-
-// FILTER STATUS
-
 if ($status_filter !== '') {
-
     $where[] = 's.status = ?';
-
     $params[] = $status_filter;
-
 }
-
-
-// FILTER TANGGAL DARI
 
 if ($tanggal_dari !== '') {
-
     $where[] = 'DATE(s.created_at) >= ?';
-
     $params[] = $tanggal_dari;
-
 }
 
-
-// FILTER TANGGAL SAMPAI
-
 if ($tanggal_sampai !== '') {
-
     $where[] = 'DATE(s.created_at) <= ?';
-
     $params[] = $tanggal_sampai;
-
 }
 
 
@@ -81,9 +64,9 @@ $setoran = [];
 $error = '';
 
 
-// ========================================
-// AMBIL DATA
-// ========================================
+// ======================================================
+// AMBIL DATA TRANSAKSI
+// ======================================================
 
 try {
 
@@ -107,47 +90,31 @@ try {
             ON s.jenis_sampah_id = jenis_sampah.id
     ";
 
-
     if (!empty($where)) {
-
-        $sql .= ' WHERE '
-            . implode(' AND ', $where);
-
+        $sql .= ' WHERE ' . implode(' AND ', $where);
     }
-
 
     $sql .= "
         ORDER BY s.created_at DESC
     ";
 
-
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute($params);
 
     $setoran = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
 } catch (PDOException $e) {
 
-    $error =
-        'Gagal mengambil data transaksi setor.';
-
+    $error = 'Gagal mengambil data transaksi setor.';
 }
 
-
-// ========================================
-// JUMLAH TRANSAKSI
-// ========================================
 
 $total_transaksi = count($setoran);
 
 
-// ========================================
+// ======================================================
 // HEADER & SIDEBAR
-// ========================================
-
-$page_title = 'Transaksi Setor';
+// ======================================================
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
@@ -157,35 +124,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 <main class="main-content">
 
-<!-- KEMBALI KE DASHBOARD -->
 
-<div style="margin-top: 25px; margin-bottom: 10px;">
-
-    <a
-        href="../dashboard.php"
-        style="
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            background: white;
-            color: #166534;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,.05);
-            border: 1px solid #e5e7eb;
-        "
-    >
-        ← Kembali ke Dashboard
-    </a>
-
-</div>
-
-
-    <!-- ========================================
+    <!-- ==================================================
          TOPBAR
-    ======================================== -->
+    ================================================== -->
 
     <div class="topbar">
 
@@ -198,7 +140,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </h1>
 
                 <p>
-                    Kelola pengajuan setoran sampah dari nasabah.
+                    Kelola dan pantau seluruh transaksi setor nasabah.
                 </p>
 
             </div>
@@ -207,21 +149,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 
         <div class="topbar-right">
-
-            <button
-                type="button"
-                class="notification-btn"
-                title="Notifikasi"
-            >
-
-                🔔
-
-                <span class="notification-badge">
-                    0
-                </span>
-
-            </button>
-
 
             <div class="user-info">
 
@@ -243,8 +170,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <div class="user-name">
 
                         <?= htmlspecialchars(
-                            $_SESSION['nama']
-                            ?? 'Administrator'
+                            $_SESSION['nama'] ?? 'Administrator'
                         ) ?>
 
                     </div>
@@ -262,38 +188,146 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
 
-
-    <!-- ========================================
+    <!-- ==================================================
          CONTENT
-    ======================================== -->
+    ================================================== -->
 
     <div style="
         margin-top: 30px;
     ">
 
 
-        <!-- ========================================
-             FILTER CARD
-        ======================================== -->
+        <!-- ==================================================
+             HEADER
+        ================================================== -->
+
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        ">
+
+            <div>
+
+                <h2 style="
+                    margin: 0;
+                    color: #166534;
+                    font-size: 24px;
+                ">
+                    Daftar Transaksi Setor
+                </h2>
+
+                <p style="
+                    margin: 7px 0 0;
+                    color: #6b7280;
+                    font-size: 14px;
+                ">
+                    Lihat transaksi setoran sampah dari seluruh nasabah.
+                </p>
+
+            </div>
+
+
+            <!-- TOTAL -->
+
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 13px 18px;
+                background: #f0fdf4;
+                border: 1px solid #dcfce7;
+                border-radius: 12px;
+                color: #166534;
+                font-weight: 700;
+            ">
+
+                <span style="
+                    font-size: 20px;
+                ">
+                    ♻️
+                </span>
+
+                <?= number_format(
+                    $total_transaksi,
+                    0,
+                    ',',
+                    '.'
+                ) ?>
+
+                Transaksi
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             FILTER
+        ================================================== -->
 
         <div style="
             background: white;
             padding: 24px;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.06);
+            box-shadow: 0 8px 25px rgba(0,0,0,.05);
             margin-bottom: 20px;
+            border: 1px solid #f1f5f9;
         ">
 
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 20px;
+            ">
 
-            <form
-                method="GET"
-                action=""
-            >
+                <div style="
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 10px;
+                    background: #ecfdf5;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                ">
+                    🔎
+                </div>
+
+                <div>
+
+                    <h3 style="
+                        margin: 0;
+                        color: #166534;
+                        font-size: 17px;
+                    ">
+                        Filter Transaksi
+                    </h3>
+
+                    <p style="
+                        margin: 3px 0 0;
+                        color: #9ca3af;
+                        font-size: 13px;
+                    ">
+                        Gunakan filter untuk mencari transaksi tertentu.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form method="GET" action="">
+
 
                 <div style="
                     display: grid;
                     grid-template-columns:
-                        repeat(auto-fit, minmax(180px, 1fr));
+                        repeat(auto-fit, minmax(190px, 1fr));
                     gap: 16px;
                     align-items: end;
                 ">
@@ -308,6 +342,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             style="
                                 display: block;
                                 margin-bottom: 7px;
+                                font-size: 13px;
                                 font-weight: 600;
                                 color: #374151;
                             "
@@ -315,16 +350,18 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             Status
                         </label>
 
-
                         <select
                             name="status"
                             id="status"
                             style="
                                 width: 100%;
-                                padding: 11px 12px;
+                                box-sizing: border-box;
+                                padding: 11px 13px;
                                 border: 1px solid #d1d5db;
-                                border-radius: 8px;
-                                background: white;
+                                border-radius: 9px;
+                                background: #fff;
+                                color: #374151;
+                                outline: none;
                             "
                         >
 
@@ -337,7 +374,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                 Semua Status
                             </option>
 
-
                             <option
                                 value="menunggu"
                                 <?= $status_filter === 'menunggu'
@@ -347,7 +383,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                 Menunggu
                             </option>
 
-
                             <option
                                 value="diterima"
                                 <?= $status_filter === 'diterima'
@@ -356,7 +391,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             >
                                 Diterima
                             </option>
-
 
                             <option
                                 value="ditolak"
@@ -372,7 +406,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </div>
 
 
-
                     <!-- TANGGAL DARI -->
 
                     <div>
@@ -382,13 +415,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             style="
                                 display: block;
                                 margin-bottom: 7px;
+                                font-size: 13px;
                                 font-weight: 600;
                                 color: #374151;
                             "
                         >
                             Tanggal Dari
                         </label>
-
 
                         <input
                             type="date"
@@ -399,14 +432,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             ) ?>"
                             style="
                                 width: 100%;
-                                padding: 10px 12px;
+                                box-sizing: border-box;
+                                padding: 10px 13px;
                                 border: 1px solid #d1d5db;
-                                border-radius: 8px;
+                                border-radius: 9px;
+                                color: #374151;
                             "
                         >
 
                     </div>
-
 
 
                     <!-- TANGGAL SAMPAI -->
@@ -418,13 +452,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             style="
                                 display: block;
                                 margin-bottom: 7px;
+                                font-size: 13px;
                                 font-weight: 600;
                                 color: #374151;
                             "
                         >
                             Tanggal Sampai
                         </label>
-
 
                         <input
                             type="date"
@@ -435,31 +469,31 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             ) ?>"
                             style="
                                 width: 100%;
-                                padding: 10px 12px;
+                                box-sizing: border-box;
+                                padding: 10px 13px;
                                 border: 1px solid #d1d5db;
-                                border-radius: 8px;
+                                border-radius: 9px;
+                                color: #374151;
                             "
                         >
 
                     </div>
 
 
-
-                    <!-- TOMBOL -->
+                    <!-- BUTTON -->
 
                     <div style="
                         display: flex;
                         gap: 8px;
-                        flex-wrap: wrap;
                     ">
-
 
                         <button
                             type="submit"
                             style="
-                                padding: 11px 18px;
+                                flex: 1;
+                                padding: 11px 17px;
                                 border: none;
-                                border-radius: 8px;
+                                border-radius: 9px;
                                 background: #166534;
                                 color: white;
                                 font-weight: 600;
@@ -473,20 +507,21 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <a
                             href="index.php"
                             style="
-                                display: inline-block;
-                                padding: 11px 18px;
-                                border-radius: 8px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                padding: 11px 15px;
+                                border-radius: 9px;
                                 background: #f3f4f6;
                                 color: #374151;
                                 text-decoration: none;
                                 font-weight: 600;
                             "
                         >
-                            ↻ Reset
+                            Reset
                         </a>
 
                     </div>
-
 
                 </div>
 
@@ -495,105 +530,122 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
 
 
-
-        <!-- ========================================
-             INFO JUMLAH
-        ======================================== -->
-
-        <div style="
-            background: #f0fdf4;
-            color: #166534;
-            padding: 15px 18px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        ">
-
-            📊
-            <?= $total_transaksi ?>
-            transaksi ditemukan.
-
-        </div>
-
-
+        <!-- ==================================================
+             ERROR
+        ================================================== -->
 
         <?php if ($error !== ''): ?>
 
-
-            <!-- ERROR -->
-
             <div style="
-                background: #fee2e2;
+                background: #fef2f2;
                 color: #b91c1c;
-                padding: 18px;
-                border-radius: 10px;
+                padding: 16px 18px;
+                border-radius: 12px;
                 margin-bottom: 20px;
+                border: 1px solid #fecaca;
             ">
 
+                ⚠️
                 <?= htmlspecialchars($error) ?>
 
             </div>
 
+        <?php endif; ?>
 
-        <?php elseif (empty($setoran)): ?>
 
+        <!-- ==================================================
+             TABLE
+        ================================================== -->
 
-            <!-- EMPTY -->
+        <?php if (empty($setoran)): ?>
 
             <div style="
                 background: white;
-                padding: 50px 20px;
+                padding: 55px 20px;
                 border-radius: 16px;
-                box-shadow: 0 10px 30px rgba(0,0,0,.06);
+                box-shadow: 0 8px 25px rgba(0,0,0,.05);
                 text-align: center;
-                color: #6b7280;
             ">
 
                 <div style="
-                    font-size: 45px;
-                    margin-bottom: 15px;
+                    width: 70px;
+                    height: 70px;
+                    margin: 0 auto 18px;
+                    border-radius: 50%;
+                    background: #f0fdf4;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 32px;
                 ">
                     📭
                 </div>
-
 
                 <h3 style="
                     margin: 0 0 8px;
                     color: #374151;
                 ">
-                    Tidak ada transaksi
+                    Tidak Ada Transaksi
                 </h3>
-
 
                 <p style="
                     margin: 0;
+                    color: #9ca3af;
+                    font-size: 14px;
                 ">
-                    Tidak ditemukan transaksi
-                    sesuai filter yang dipilih.
+                    Belum ada transaksi yang sesuai dengan filter.
                 </p>
 
             </div>
 
-
         <?php else: ?>
 
-
-            <!-- ========================================
-                 TABLE
-            ======================================== -->
 
             <div style="
                 background: white;
                 padding: 24px;
                 border-radius: 16px;
-                box-shadow: 0 10px 30px rgba(0,0,0,.06);
+                box-shadow: 0 8px 25px rgba(0,0,0,.05);
+                border: 1px solid #f1f5f9;
                 overflow-x: auto;
             ">
+
+
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 18px;
+                ">
+
+                    <div>
+
+                        <h3 style="
+                            margin: 0;
+                            color: #374151;
+                            font-size: 17px;
+                        ">
+                            Data Setoran
+                        </h3>
+
+                        <p style="
+                            margin: 4px 0 0;
+                            color: #9ca3af;
+                            font-size: 13px;
+                        ">
+                            <?= $total_transaksi ?>
+                            transaksi ditampilkan
+                        </p>
+
+                    </div>
+
+                </div>
 
 
                 <table style="
                     width: 100%;
                     border-collapse: collapse;
+                    min-width: 950px;
                 ">
 
                     <thead>
@@ -603,86 +655,87 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 No
                             </th>
 
-
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Nasabah
                             </th>
 
-
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Jenis Sampah
                             </th>
 
-
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Berat
                             </th>
 
-
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Total
                             </th>
 
-
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Status
                             </th>
 
-
                             <th style="
                                 padding: 14px;
                                 text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Tanggal
                             </th>
 
-
                             <th style="
                                 padding: 14px;
-                                text-align: left;
-                                border-bottom: 1px solid #e5e7eb;
+                                text-align: center;
                                 background: #f0fdf4;
                                 color: #166534;
+                                font-size: 13px;
+                                border-bottom: 1px solid #dcfce7;
                             ">
                                 Aksi
                             </th>
@@ -694,68 +747,47 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                     <tbody>
 
-
-                    <?php foreach (
-                        $setoran
-                        as $index => $item
-                    ): ?>
-
+                    <?php foreach ($setoran as $index => $item): ?>
 
                         <?php
 
-                        $status =
-                            $item['status'];
+                        $status = strtolower(
+                            $item['status'] ?? ''
+                        );
 
-                        if (
-                            $status === 'menunggu'
-                        ) {
+                        switch ($status) {
 
-                            $status_background =
-                                '#fef3c7';
+                            case 'diterima':
 
-                            $status_color =
-                                '#92400e';
+                                $status_background = '#dcfce7';
+                                $status_color = '#166534';
+                                $status_text = 'Diterima';
 
-                            $status_text =
-                                'Menunggu';
+                                break;
 
-                        } elseif (
-                            $status === 'diterima'
-                        ) {
+                            case 'ditolak':
 
-                            $status_background =
-                                '#dcfce7';
+                                $status_background = '#fee2e2';
+                                $status_color = '#b91c1c';
+                                $status_text = 'Ditolak';
 
-                            $status_color =
-                                '#166534';
+                                break;
 
-                            $status_text =
-                                'Diterima';
+                            case 'menunggu':
 
-                        } elseif (
-                            $status === 'ditolak'
-                        ) {
+                                $status_background = '#fef3c7';
+                                $status_color = '#92400e';
+                                $status_text = 'Menunggu';
 
-                            $status_background =
-                                '#fee2e2';
+                                break;
 
-                            $status_color =
-                                '#b91c1c';
+                            default:
 
-                            $status_text =
-                                'Ditolak';
+                                $status_background = '#f3f4f6';
+                                $status_color = '#374151';
+                                $status_text = ucfirst($status);
 
-                        } else {
-
-                            $status_background =
-                                '#e5e7eb';
-
-                            $status_color =
-                                '#374151';
-
-                            $status_text =
-                                ucfirst($status);
-
+                                break;
                         }
 
                         ?>
@@ -764,82 +796,132 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <tr>
 
 
-                            <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
-                            ">
+                            <!-- NO -->
 
+                            <td style="
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
+                                color: #6b7280;
+                            ">
                                 <?= $index + 1 ?>
-
                             </td>
 
 
+                            <!-- NASABAH -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
                             ">
 
-                                <strong>
+                                <div style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 10px;
+                                ">
 
-                                    <?= htmlspecialchars(
-                                        $item[
-                                            'nama_nasabah'
-                                        ]
-                                    ) ?>
+                                    <div style="
+                                        width: 36px;
+                                        height: 36px;
+                                        border-radius: 50%;
+                                        background: #dcfce7;
+                                        color: #166534;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-weight: 700;
+                                        flex-shrink: 0;
+                                    ">
 
-                                </strong>
+                                        <?= strtoupper(
+                                            substr(
+                                                $item['nama_nasabah'],
+                                                0,
+                                                1
+                                            )
+                                        ) ?>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <div style="
+                                            font-weight: 600;
+                                            color: #1f2937;
+                                        ">
+                                            <?= htmlspecialchars(
+                                                $item['nama_nasabah']
+                                            ) ?>
+                                        </div>
+
+                                        <div style="
+                                            font-size: 12px;
+                                            color: #9ca3af;
+                                        ">
+                                            Nasabah
+                                        </div>
+
+                                    </div>
+
+                                </div>
 
                             </td>
 
 
+                            <!-- JENIS SAMPAH -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
+                                color: #374151;
                             ">
 
                                 <?= htmlspecialchars(
-                                    $item[
-                                        'nama_sampah'
-                                    ]
+                                    $item['nama_sampah']
                                 ) ?>
 
                             </td>
 
 
+                            <!-- BERAT -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
+                                white-space: nowrap;
+                                color: #374151;
                             ">
 
-                                <?= number_format(
-                                    $item['berat'],
-                                    2,
-                                    ',',
-                                    '.'
-                                ) ?>
+                                <strong>
+                                    <?= number_format(
+                                        (float) $item['berat'],
+                                        2,
+                                        ',',
+                                        '.'
+                                    ) ?>
+                                </strong>
 
                                 kg
 
                             </td>
 
 
+                            <!-- TOTAL -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
+                                white-space: nowrap;
                             ">
 
-                                <strong>
+                                <strong style="
+                                    color: #166534;
+                                ">
 
                                     Rp
                                     <?= number_format(
-                                        $item[
-                                            'total_harga'
-                                        ],
+                                        (float) $item['total_harga'],
                                         0,
                                         ',',
                                         '.'
@@ -850,23 +932,31 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             </td>
 
 
+                            <!-- STATUS -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
                             ">
 
                                 <span style="
-                                    display: inline-block;
-                                    padding: 6px 10px;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    padding: 6px 11px;
                                     border-radius: 20px;
-                                    background:
-                                        <?= $status_background ?>;
-                                    color:
-                                        <?= $status_color ?>;
-                                    font-size: 13px;
-                                    font-weight: bold;
+                                    background: <?= $status_background ?>;
+                                    color: <?= $status_color ?>;
+                                    font-size: 12px;
+                                    font-weight: 700;
                                 ">
+
+                                    <span style="
+                                        width: 6px;
+                                        height: 6px;
+                                        border-radius: 50%;
+                                        background: <?= $status_color ?>;
+                                    "></span>
 
                                     <?= htmlspecialchars(
                                         $status_text
@@ -877,62 +967,79 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             </td>
 
 
+                            <!-- TANGGAL -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
                                 white-space: nowrap;
+                                color: #6b7280;
+                                font-size: 13px;
                             ">
 
                                 <?= date(
-                                    'd-m-Y H:i',
+                                    'd-m-Y',
                                     strtotime(
-                                        $item[
-                                            'created_at'
-                                        ]
+                                        $item['created_at']
                                     )
                                 ) ?>
+
+                                <br>
+
+                                <span style="
+                                    color: #9ca3af;
+                                ">
+
+                                    <?= date(
+                                        'H:i',
+                                        strtotime(
+                                            $item['created_at']
+                                        )
+                                    ) ?>
+
+                                </span>
 
                             </td>
 
 
+                            <!-- AKSI -->
+
                             <td style="
-                                padding: 14px;
-                                border-bottom:
-                                    1px solid #e5e7eb;
+                                padding: 15px 14px;
+                                border-bottom: 1px solid #f1f5f9;
+                                text-align: center;
                             ">
 
                                 <a
                                     href="detail.php?id=<?= (int) $item['id'] ?>"
                                     style="
-                                        display: inline-block;
+                                        display: inline-flex;
+                                        align-items: center;
+                                        gap: 6px;
                                         padding: 8px 13px;
-                                        border-radius: 7px;
+                                        border-radius: 8px;
                                         background: #166534;
                                         color: white;
                                         text-decoration: none;
-                                        font-size: 13px;
+                                        font-size: 12px;
                                         font-weight: 600;
                                     "
                                 >
-                                    Detail
+                                    👁️ Detail
                                 </a>
 
                             </td>
-
 
                         </tr>
 
 
                     <?php endforeach; ?>
 
-
                     </tbody>
 
                 </table>
 
             </div>
-
 
         <?php endif; ?>
 
@@ -948,4 +1055,3 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 require_once __DIR__ . '/../../includes/footer.php';
 
 ?>
-
